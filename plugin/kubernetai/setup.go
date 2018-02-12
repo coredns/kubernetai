@@ -39,7 +39,7 @@ func setup(c *caddy.Controller) error {
 
 // Parse parses multiple kubernetes into a kubernetai
 func Parse(c *caddy.Controller) (*Kubernetai, error) {
-	var k8i *Kubernetai
+	var k8i = &Kubernetai{}
 	var err error
 	for c.Next() {
 		var k8s *kubernetes.Kubernetes
