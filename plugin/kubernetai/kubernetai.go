@@ -104,6 +104,18 @@ func (k8i Kubernetai) Federations(state request.Request, fname, fzone string) (m
 	return msg.Service{}, fmt.Errorf("could not find a kubernetes authoritative for %v", state.Name())
 }
 
+// Health implements the health.Healther interface.
+func (k8i Kubernetai) Health() bool {
+	healthy := true
+	for _, k := range k8i.Kubernetes {
+		healthy = healthy && k.APIConn.HasSynced()
+		if !healthy {
+			break
+		}
+	}
+	return healthy
+}
+
 // Name implements the Handler interface.
 func (Kubernetai) Name() string { return Name() }
 
