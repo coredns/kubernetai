@@ -1,6 +1,6 @@
 # kubernetai
 
-*Kubernetai* (koo-ber-NET-eye) is the plural form of Kubernetes.<sup>[1](#plural)</sup>
+*Kubernetai* (koo-ber-NET-eye) is the plural form of Kubernetes.
 In a nutshell, *Kubernetai* is an external plugin for CoreDNS that holds multiple *kubernetes* plugin
 configurations.  It allows one CoreDNS server to connect to more than one Kubernetes server at a time.
 
@@ -54,7 +54,3 @@ will always first get processed by the first stanza. The *fallthrough* in the fi
 The first *kubernetai* stanza exposes only the `default` namespace.
 When we query for a service in the `default` namespace, the kubernetes instance in the first stanza answers.
 When we query for a service in any other namespace, the first stanza falls through to the second, and the second connection answers.
-
----
-
-<sup><a name="plural">1</a>: Probably not actually true.</sup>
