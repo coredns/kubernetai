@@ -1,14 +1,15 @@
 package kubernetai
 
 import (
+	"fmt"
+
 	"github.com/coredns/coredns/plugin"
 	"github.com/coredns/coredns/plugin/etcd/msg"
 	"github.com/coredns/coredns/plugin/kubernetes"
-	"github.com/coredns/coredns/plugin/pkg/nonwriter"
-
-	"fmt"
 	"github.com/coredns/coredns/plugin/pkg/fall"
+	"github.com/coredns/coredns/plugin/pkg/nonwriter"
 	"github.com/coredns/coredns/request"
+
 	"github.com/miekg/dns"
 	"golang.org/x/net/context"
 )
