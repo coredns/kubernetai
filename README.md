@@ -54,3 +54,4 @@ will always first get processed by the first stanza. The *fallthrough* in the fi
 The first *kubernetai* stanza exposes only the `default` namespace.
 When we query for a service in the `default` namespace, the kubernetes instance in the first stanza answers.
 When we query for a service in any other namespace, the first stanza falls through to the second, and the second connection answers.
+
