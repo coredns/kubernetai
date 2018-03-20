@@ -16,7 +16,7 @@ exactly the same as the built in *kubernetes* plugin, you just name them `kubern
 
 ## Syntax
 
-Identical to [*kubernetes*](/plugin/kubernetes).
+Identical to [*kubernetes*](https://github.com/coredns/coredns/tree/master/plugin/kubernetes).
 
 ## Examples
 
