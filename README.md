@@ -7,7 +7,8 @@
 ## Description
 
 *Kubernetai* (koo-ber-NET-eye) is the plural form of Kubernetes.
-In a nutshell, *Kubernetai* is an external plugin for CoreDNS that holds multiple [*kubernetes*](/plugin/kubernetes) plugin
+In a nutshell, *Kubernetai* is an external plugin for CoreDNS that holds multiple
+[*kubernetes*](https://github.com/coredns/coredns/tree/master/plugin/kubernetes) plugin
 configurations.  It allows one CoreDNS server to connect to more than one Kubernetes server at a time.
 
 With *kubernetai*, you can define multiple *kubernetes* blocks in your Corefile. All options are
@@ -16,7 +17,7 @@ exactly the same as the built in *kubernetes* plugin, you just name them `kubern
 
 ## Syntax
 
-Identical to [*kubernetes*](/plugin/kubernetes).
+Identical to [*kubernetes*](https://github.com/coredns/coredns/tree/master/plugin/kubernetes).
 
 ## Examples
 
