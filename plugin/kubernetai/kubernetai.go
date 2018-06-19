@@ -1,6 +1,7 @@
 package kubernetai
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/coredns/coredns/plugin"
@@ -11,7 +12,6 @@ import (
 	"github.com/coredns/coredns/request"
 
 	"github.com/miekg/dns"
-	"golang.org/x/net/context"
 )
 
 // Kubernetai handles multiple Kubernetes
