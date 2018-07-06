@@ -8,11 +8,14 @@ import (
 	"github.com/coredns/coredns/plugin/etcd/msg"
 	"github.com/coredns/coredns/plugin/kubernetes"
 	"github.com/coredns/coredns/plugin/pkg/fall"
+	clog "github.com/coredns/coredns/plugin/pkg/log"
 	"github.com/coredns/coredns/plugin/pkg/nonwriter"
 	"github.com/coredns/coredns/request"
 
 	"github.com/miekg/dns"
 )
+
+var log = clog.NewWithPlugin("kubernetai")
 
 // Kubernetai handles multiple Kubernetes
 type Kubernetai struct {
@@ -83,14 +86,26 @@ func (k8i Kubernetai) ServeDNS(ctx context.Context, w dns.ResponseWriter, r *dns
 
 // AutoPath routes AutoPath requests to the authoritative kubernetes.
 func (k8i Kubernetai) AutoPath(state request.Request) []string {
-	for _, k := range k8i.Kubernetes {
+	var allpaths [][]string
+	first := 0
+	for i, k := range k8i.Kubernetes {
 		zone := plugin.Zones(k.Zones).Matches(state.Name())
-		if zone == "" {
+		if zone != "" {
+			first = i
+		}
+		allpaths = append(allpaths, k.AutoPath(state))
+	}
+
+	path := allpaths[first]
+	for i, p := range allpaths {
+		if i == first {
 			continue
 		}
-		return k.AutoPath(state)
+		path = append(path, p...)
+
 	}
-	return nil
+	log.Debugf("Autopath search path for '%s' will be '%v'", state.Name(), path)
+	return path
 }
 
 // Federations routes Federations requests to the authoritative kubernetes.
