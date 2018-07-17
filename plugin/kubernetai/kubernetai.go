@@ -5,8 +5,6 @@ import (
 	"fmt"
 	"strings"
 
-	api "k8s.io/api/core/v1"
-
 	"github.com/coredns/coredns/plugin"
 	"github.com/coredns/coredns/plugin/etcd/msg"
 	"github.com/coredns/coredns/plugin/kubernetes"
@@ -16,6 +14,7 @@ import (
 	"github.com/coredns/coredns/request"
 
 	"github.com/miekg/dns"
+	api "k8s.io/api/core/v1"
 )
 
 var log = clog.NewWithPlugin("kubernetai")
