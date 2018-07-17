@@ -14,7 +14,6 @@ import (
 	"github.com/coredns/coredns/request"
 
 	"github.com/miekg/dns"
-	api "k8s.io/api/core/v1"
 )
 
 var log = clog.NewWithPlugin("kubernetai")
@@ -102,7 +101,6 @@ func (k8i Kubernetai) AutoPath(state request.Request) []string {
 			searchPath = append([]string{zone}, searchPath...)
 			ip := state.IP()
 			pods := k.APIConn.PodIndex(ip)
-			var pod *api.Pod = nil
 			if len(pods) != 0 {
 				pod := pods[0]
 				searchPath = append([]string{pod.Namespace + zone}, searchPath...)
