@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"strings"
 
+	api "k8s.io/api/core/v1"
+
 	"github.com/coredns/coredns/plugin"
 	"github.com/coredns/coredns/plugin/etcd/msg"
 	"github.com/coredns/coredns/plugin/kubernetes"
@@ -99,6 +101,13 @@ func (k8i Kubernetai) AutoPath(state request.Request) []string {
 		zone := plugin.Zones(zones).Matches(state.Name())
 		if zone != "" {
 			searchPath = append([]string{zone}, searchPath...)
+			ip := state.IP()
+			pods := k.APIConn.PodIndex(ip)
+			var pod *api.Pod = nil
+			if len(pods) != 0 {
+				pod := ps[0]
+				searchPath = append([]string{pod.Namespace + zone}, searchPath...)
+			}
 		}
 		searchPath = append(searchPath, zones...)
 	}
