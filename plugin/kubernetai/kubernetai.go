@@ -104,7 +104,7 @@ func (k8i Kubernetai) AutoPath(state request.Request) []string {
 			pods := k.APIConn.PodIndex(ip)
 			var pod *api.Pod = nil
 			if len(pods) != 0 {
-				pod := ps[0]
+				pod := pods[0]
 				searchPath = append([]string{pod.Namespace + zone}, searchPath...)
 			}
 		}
