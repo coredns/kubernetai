@@ -67,7 +67,6 @@ func (k8i Kubernetai) ServeDNS(ctx context.Context, w dns.ResponseWriter, r *dns
 			// Otherwise write message to client
 			m := nw.Msg
 			state.SizeAndDo(m)
-			m, _ = state.Scrub(m)
 			w.WriteMsg(m)
 
 			return m.Rcode, err
