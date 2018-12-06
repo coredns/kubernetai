@@ -4,26 +4,34 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/miekg/dns"
+
 	"github.com/coredns/coredns/plugin"
 	"github.com/coredns/coredns/plugin/etcd/msg"
 	"github.com/coredns/coredns/plugin/kubernetes"
 	"github.com/coredns/coredns/plugin/pkg/fall"
+	clog "github.com/coredns/coredns/plugin/pkg/log"
 	"github.com/coredns/coredns/plugin/pkg/nonwriter"
 	"github.com/coredns/coredns/request"
-
-	"github.com/miekg/dns"
 )
+
+var log = clog.NewWithPlugin("kubernetai")
 
 // Kubernetai handles multiple Kubernetes
 type Kubernetai struct {
-	Zones      []string
-	Next       plugin.Handler
-	Kubernetes []*kubernetes.Kubernetes
+	Zones          []string
+	Next           plugin.Handler
+	Kubernetes     []*kubernetes.Kubernetes
+	autoPathSearch []string // Local search path from /etc/resolv.conf. Needed for autopath.
+	p              podHandlerItf
 }
 
 // New creates a Kubernetai containing one Kubernetes with zones
 func New(zones []string) (Kubernetai, *kubernetes.Kubernetes) {
-	h := Kubernetai{}
+	h := Kubernetai{
+		autoPathSearch: searchFromResolvConf(),
+		p:              &podHandler{},
+	}
 	k := kubernetes.New(zones)
 	h.Kubernetes = append(h.Kubernetes, k)
 	return h, k
@@ -83,14 +91,46 @@ func (k8i Kubernetai) ServeDNS(ctx context.Context, w dns.ResponseWriter, r *dns
 
 // AutoPath routes AutoPath requests to the authoritative kubernetes.
 func (k8i Kubernetai) AutoPath(state request.Request) []string {
-	for _, k := range k8i.Kubernetes {
-		zone := plugin.Zones(k.Zones).Matches(state.Name())
-		if zone == "" {
-			continue
+	var searchPath []string
+
+	// Abort if zone is not in kubernetai stanza.
+	var zMatch bool
+	for _, k8s := range k8i.Kubernetes {
+		zone := plugin.Zones(k8s.Zones).Matches(state.Name())
+		if zone != "" {
+			zMatch = true
+			break
 		}
-		return k.AutoPath(state)
 	}
-	return nil
+	if !zMatch {
+		return nil
+	}
+
+	// Add autopath result for the handled zones
+	for _, k := range k8i.Kubernetes {
+		pod := k8i.p.PodWithIP(*k, state.IP())
+		if pod == nil {
+			return nil
+		}
+
+		search := make([]string, 3)
+		for _, z := range k.Zones {
+			if z == "." {
+				search[0] = pod.Namespace + ".svc."
+				search[1] = "svc."
+				search[2] = "."
+			} else {
+				search[0] = pod.Namespace + ".svc." + z
+				search[1] = "svc." + z
+				search[2] = z
+			}
+			searchPath = append(search, searchPath...)
+		}
+	}
+	searchPath = append(searchPath, k8i.autoPathSearch...)
+	searchPath = append(searchPath, "")
+	log.Debugf("Autopath search path for '%s' will be '%v'", state.Name(), searchPath)
+	return searchPath
 }
 
 // Federations routes Federations requests to the authoritative kubernetes.
@@ -103,6 +143,15 @@ func (k8i Kubernetai) Federations(state request.Request, fname, fzone string) (m
 		return k.Federations(state, fname, fzone)
 	}
 	return msg.Service{}, fmt.Errorf("could not find a kubernetes authoritative for %v", state.Name())
+}
+
+func searchFromResolvConf() []string {
+	rc, err := dns.ClientConfigFromFile("/etc/resolv.conf")
+	if err != nil {
+		return nil
+	}
+	plugin.Zones(rc.Search).Normalize()
+	return rc.Search
 }
 
 // Health implements the health.Healther interface.
