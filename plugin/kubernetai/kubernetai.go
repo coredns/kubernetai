@@ -3,6 +3,7 @@ package kubernetai
 import (
 	"context"
 	"fmt"
+	"sync"
 
 	"github.com/miekg/dns"
 
@@ -24,6 +25,7 @@ type Kubernetai struct {
 	Kubernetes     []*kubernetes.Kubernetes
 	autoPathSearch []string // Local search path from /etc/resolv.conf. Needed for autopath.
 	p              podHandlerItf
+	m              sync.Mutex
 }
 
 // New creates a Kubernetai containing one Kubernetes with zones
@@ -38,7 +40,7 @@ func New(zones []string) (Kubernetai, *kubernetes.Kubernetes) {
 }
 
 // ServeDNS routes requests to the authoritative kubernetes. It implements the plugin.Handler interface.
-func (k8i Kubernetai) ServeDNS(ctx context.Context, w dns.ResponseWriter, r *dns.Msg) (rcode int, err error) {
+func (k8i *Kubernetai) ServeDNS(ctx context.Context, w dns.ResponseWriter, r *dns.Msg) (rcode int, err error) {
 	state := request.Request{W: w, Req: r}
 	for i, k := range k8i.Kubernetes {
 		zone := plugin.Zones(k.Zones).Matches(state.Name())
@@ -54,6 +56,7 @@ func (k8i Kubernetai) ServeDNS(ctx context.Context, w dns.ResponseWriter, r *dns
 			nw := nonwriter.New(w)
 
 			// Temporarily disable fallthrough to prevent going to the next plugin in kubernetes.ServeDNS
+			k8i.m.Lock()
 			oFall := k.Fall
 			k.Fall = fall.F{}
 
@@ -61,6 +64,7 @@ func (k8i Kubernetai) ServeDNS(ctx context.Context, w dns.ResponseWriter, r *dns
 
 			// Restore fallthrough
 			k.Fall = oFall
+			k8i.m.Unlock()
 
 			// Return SERVFAIL if error
 			if err != nil {
