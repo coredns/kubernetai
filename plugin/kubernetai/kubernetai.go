@@ -40,7 +40,10 @@ func New(zones []string) (Kubernetai, *kubernetes.Kubernetes) {
 // ServeDNS routes requests to the authoritative kubernetes. It implements the plugin.Handler interface.
 func (k8i Kubernetai) ServeDNS(ctx context.Context, w dns.ResponseWriter, r *dns.Msg) (rcode int, err error) {
 	state := request.Request{W: w, Req: r}
-	for i, k := range k8i.Kubernetes {
+	for i, kube := range k8i.Kubernetes {
+		// use the copy of kubernetes.Kubernetes struct to avioid race condition
+		k := *kube
+
 		zone := plugin.Zones(k.Zones).Matches(state.Name())
 		if zone == "" {
 			continue
