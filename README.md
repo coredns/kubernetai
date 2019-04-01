@@ -17,7 +17,7 @@ exactly the same as the built in *kubernetes* plugin, you just name them `kubern
 
 ## Syntax
 
-Identical to [*kubernetes*](https://github.com/coredns/coredns/tree/master/plugin/kubernetes).
+The options for *kubernetai* are identical to the *kubernetes* plugin.  Please see the documentation for the [*kubernetes* plugin](https://github.com/coredns/coredns/tree/master/plugin/kubernetes), for syntax and option definitions.
 
 ## Examples
 
