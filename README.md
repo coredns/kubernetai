@@ -19,6 +19,10 @@ exactly the same as the built in *kubernetes* plugin, you just name them `kubern
 
 The options for *kubernetai* are identical to the *kubernetes* plugin.  Please see the documentation for the [*kubernetes* plugin](https://github.com/coredns/coredns/blob/master/plugin/kubernetes/README.md), for syntax and option definitions.
 
+## External Plugin
+
+*Kubernetai* is an *external* plugin, which means it is not included in CoreDNS releases.  To use *kubernetai*, you'll need to build a CoreDNS image with *kubernetai* (replacing *kubernetes*). See the docs in [plugin.cfg](https://github.com/coredns/coredns/blob/master/plugin.cfg).
+
 ## Examples
 
 For example, the following Corefile will connect to three different Kubernetes clusters.
@@ -39,7 +43,7 @@ For example, the following Corefile will connect to three different Kubernetes c
 }
 ~~~
 
-### fallthrough
+### Fallthrough
 
 *Fallthrough* in *kubernetai* will fall-through to the next *kubernetai* stanza (in the order they are in the Corefile),
 or to the next plugin (if it's the last *kubernetai* stanza).
