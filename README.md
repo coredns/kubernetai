@@ -64,7 +64,7 @@ The `ignore empty_service` tells *kubernetai* not to create records for Headless
       fallthrough
     }
     kubernetai cluster.local {
-      endpoint http://remote-k8s-cluster:8080
+      endpoint https://remote-k8s-cluster
     }
 }
 ~~~
