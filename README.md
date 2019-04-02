@@ -15,6 +15,8 @@ With *kubernetai*, you can define multiple *kubernetes* blocks in your Corefile.
 exactly the same as the built in *kubernetes* plugin, you just name them `kubernetai` instead of
 `kubernetes`.
 
+Note that in Kubernetes, ClusterIP Services cannot be routed outside the cluster.  Therefore to accomodate cross-cluster access, you'll need to use Service Endpoint IPs.  For that reason, for *kubernetai* to serve IPs that are routable to clients outside the cluster, you should use Headless Services instead of ClusterIP Services.  Of course, for this to work, you will also need to ensure that Service Endpoint IPs are routable across the clusters, which is possible to do, but not necessarily the case by default.
+
 ## Syntax
 
 The options for *kubernetai* are identical to the *kubernetes* plugin.  Please see the documentation for the [*kubernetes* plugin](https://github.com/coredns/coredns/blob/master/plugin/kubernetes/README.md), for syntax and option definitions.
@@ -46,16 +48,19 @@ For example, the following Corefile will connect to three different Kubernetes c
 ### Fallthrough
 
 *Fallthrough* in *kubernetai* will fall-through to the next *kubernetai* stanza (in the order they are in the Corefile),
-or to the next plugin (if it's the last *kubernetai* stanza).
+or to the next plugin (if it's the last *kubernetai* stanza).  This can be used to provide a kind of cross-cluster fault tolerance when you have common services deployed across multiple clusters.
 
 Here is an example Corefile that makes a connection to the local cluster, but also a remote cluster that uses the same domain name. Because both *kubernetai* stanzas serve the same zone, queries for `cluster.local`
 will always first get processed by the first stanza. The *fallthrough* in the first stanza allows processing to go to the next stanza if the service is not found in the first.
+
+The `ignore empty_service` tells *kubernetai* not to create records for Headless Services that have no ready endpoints.  So if a Service exists in both clusters, but the local one is not ready, clients are directed to the remote Service.
 
 ~~~ txt
 . {
     errors
     log
     kubernetai cluster.local {
+      ignore empty_service
       fallthrough
     }
     kubernetai cluster.local {
