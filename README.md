@@ -58,14 +58,11 @@ or to the next plugin (if it's the last *kubernetai* stanza).  This can be used 
 Here is an example Corefile that makes a connection to the local cluster, but also a remote cluster that uses the same domain name. Because both *kubernetai* stanzas serve the same zone, queries for `cluster.local`
 will always first get processed by the first stanza. The *fallthrough* in the first stanza allows processing to go to the next stanza if the service is not found in the first.
 
-The `ignore empty_service` tells *kubernetai* not to create records for Headless Services that have no ready endpoints.  So if a Service exists in both clusters, but the local one is not ready, clients are directed to the remote Service.
-
 ~~~ txt
 . {
     errors
     log
     kubernetai cluster.local {
-      ignore empty_service
       fallthrough
     }
     kubernetai cluster.local {
