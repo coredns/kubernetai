@@ -24,7 +24,7 @@ The options for *kubernetai* are identical to the *kubernetes* plugin.  Please s
 ## External Plugin
 
 *Kubernetai* is an *external* plugin, which means it is not included in CoreDNS releases.  To use *kubernetai*, you'll need to build a CoreDNS image with *kubernetai* (replacing *kubernetes*). In a nutshell you'll need to:
-* Clone https://github.com/coredns/coredns
+* Clone https://github.com/coredns/coredns into `$GOPATH/src/github.com/coredns`
 * Add this plugin to [plugin.cfg](https://github.com/coredns/coredns/blob/master/plugin.cfg) per instructions therein.
 * `make -f Makefile.release DOCKER=your-docker-repo release`
 * `make -f Makefile.release DOCKER=your-docker-repo docker`
