@@ -1,15 +1,15 @@
 package kubernetai
 
 import (
-	"github.com/coredns/coredns/plugin/kubernetes"
-	"github.com/coredns/coredns/plugin/kubernetes/object"
-	"github.com/miekg/dns"
 	"net"
 	"reflect"
 	"testing"
 
 	"github.com/coredns/coredns/plugin"
+	"github.com/coredns/coredns/plugin/kubernetes"
+	"github.com/coredns/coredns/plugin/kubernetes/object"
 	"github.com/coredns/coredns/request"
+	"github.com/miekg/dns"
 )
 
 type k8iPodHandlerTester struct{}
