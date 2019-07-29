@@ -4,8 +4,6 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/miekg/dns"
-
 	"github.com/coredns/coredns/plugin"
 	"github.com/coredns/coredns/plugin/etcd/msg"
 	"github.com/coredns/coredns/plugin/kubernetes"
@@ -13,6 +11,7 @@ import (
 	clog "github.com/coredns/coredns/plugin/pkg/log"
 	"github.com/coredns/coredns/plugin/pkg/nonwriter"
 	"github.com/coredns/coredns/request"
+	"github.com/miekg/dns"
 )
 
 var log = clog.NewWithPlugin("kubernetai")
