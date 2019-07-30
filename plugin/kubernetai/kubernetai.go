@@ -21,6 +21,7 @@ type Kubernetai struct {
 	Zones          []string
 	Next           plugin.Handler
 	Kubernetes     []*kubernetes.Kubernetes
+	Fall           []fall.F
 	autoPathSearch []string // Local search path from /etc/resolv.conf. Needed for autopath.
 	p              podHandlerItf
 }
@@ -48,18 +49,11 @@ func (k8i Kubernetai) ServeDNS(ctx context.Context, w dns.ResponseWriter, r *dns
 		// If fallthrough is enabled and there are more kubernetes in the list, then we
 		// should continue to the next kubernetes in the list (not next plugin) when
 		// ServeDNS results in NXDOMAIN.
-		if i != (len(k8i.Kubernetes)-1) && k.Fall.Through(state.Name()) {
+		if i != (len(k8i.Kubernetes)-1) && k8i.Fall[i].Through(state.Name()) {
 			// Use a non-writer so we don't write NXDOMAIN to client
 			nw := nonwriter.New(w)
 
-			// Temporarily disable fallthrough to prevent going to the next plugin in kubernetes.ServeDNS
-			oFall := k.Fall
-			k.Fall = fall.F{}
-
 			_, err := k.ServeDNS(ctx, nw, r)
-
-			// Restore fallthrough
-			k.Fall = oFall
 
 			// Return SERVFAIL if error
 			if err != nil {

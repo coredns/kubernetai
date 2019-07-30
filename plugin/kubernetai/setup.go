@@ -51,5 +51,15 @@ func Parse(c *caddy.Controller) (*Kubernetai, error) {
 		}
 		k8i.Kubernetes = append(k8i.Kubernetes, k8s)
 	}
+
+	for i := 0; i < len(k8i.Kubernetes); i++ {
+		// Copy Fallthough settings from the Kubernetes object
+		k8i.Fall = append(k8i.Fall, k8i.Kubernetes[i].Fall)
+		// for all but last instance, disable fallthrough in the Kubernetes object
+		if i < len(k8i.Kubernetes)-1 {
+			k8i.Kubernetes[i].Fall.Zones = nil
+		}
+	}
+
 	return k8i, nil
 }
