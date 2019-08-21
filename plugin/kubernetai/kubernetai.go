@@ -3,6 +3,7 @@ package kubernetai
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/coredns/coredns/plugin"
 	"github.com/coredns/coredns/plugin/etcd/msg"
@@ -41,6 +42,14 @@ func New(zones []string) (Kubernetai, *kubernetes.Kubernetes) {
 func (k8i Kubernetai) ServeDNS(ctx context.Context, w dns.ResponseWriter, r *dns.Msg) (rcode int, err error) {
 	state := request.Request{W: w, Req: r}
 	for i, k := range k8i.Kubernetes {
+		if !k.APIConn.HasSynced() && i < len(k8i.Kubernetes)-1 {
+			// If the kube plugin has not synced, then skip it. Unless
+			// it's the last one in the list, so that we still return a SERVFAIL
+			// if all connections are down.
+			clog.Warningf("cluster %s has not synced, skipping", strings.Join(k.APIServerList, ":"))
+			continue
+		}
+
 		zone := plugin.Zones(k.Zones).Matches(state.Name())
 		if zone == "" {
 			continue
