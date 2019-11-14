@@ -2,10 +2,8 @@ package kubernetai
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/coredns/coredns/plugin"
-	"github.com/coredns/coredns/plugin/etcd/msg"
 	"github.com/coredns/coredns/plugin/kubernetes"
 	"github.com/coredns/coredns/plugin/pkg/fall"
 	clog "github.com/coredns/coredns/plugin/pkg/log"
@@ -124,18 +122,6 @@ func (k8i Kubernetai) AutoPath(state request.Request) []string {
 	searchPath = append(searchPath, "")
 	log.Debugf("Autopath search path for '%s' will be '%v'", state.Name(), searchPath)
 	return searchPath
-}
-
-// Federations routes Federations requests to the authoritative kubernetes.
-func (k8i Kubernetai) Federations(state request.Request, fname, fzone string) (msg.Service, error) {
-	for _, k := range k8i.Kubernetes {
-		zone := plugin.Zones(k.Zones).Matches(state.Name())
-		if zone == "" {
-			continue
-		}
-		return k.Federations(state, fname, fzone)
-	}
-	return msg.Service{}, fmt.Errorf("could not find a kubernetes authoritative for %v", state.Name())
 }
 
 func searchFromResolvConf() []string {
