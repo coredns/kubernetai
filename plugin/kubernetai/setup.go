@@ -1,7 +1,9 @@
 package kubernetai
 
 import (
-	"github.com/caddyserver/caddy"
+	"context"
+
+	"github.com/coredns/caddy"
 	"github.com/coredns/coredns/core/dnsserver"
 	"github.com/coredns/coredns/plugin"
 	"github.com/coredns/coredns/plugin/kubernetes"
@@ -21,7 +23,7 @@ func setup(c *caddy.Controller) error {
 	}
 
 	for _, k := range k8i.Kubernetes {
-		err = k.InitKubeCache()
+		err = k.InitKubeCache(context.Background())
 		if err != nil {
 			return plugin.Error(Name(), err)
 		}
