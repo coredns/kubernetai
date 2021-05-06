@@ -5,9 +5,7 @@ import (
 
 	"github.com/coredns/coredns/plugin"
 	"github.com/coredns/coredns/plugin/kubernetes"
-	"github.com/coredns/coredns/plugin/pkg/fall"
 	clog "github.com/coredns/coredns/plugin/pkg/log"
-	"github.com/coredns/coredns/plugin/pkg/nonwriter"
 	"github.com/coredns/coredns/request"
 	"github.com/miekg/dns"
 )
@@ -17,9 +15,7 @@ var log = clog.NewWithPlugin("kubernetai")
 // Kubernetai handles multiple Kubernetes
 type Kubernetai struct {
 	Zones          []string
-	Next           plugin.Handler
 	Kubernetes     []*kubernetes.Kubernetes
-	Fall           []fall.F
 	autoPathSearch []string // Local search path from /etc/resolv.conf. Needed for autopath.
 	p              podHandlerItf
 }
@@ -37,47 +33,7 @@ func New(zones []string) (Kubernetai, *kubernetes.Kubernetes) {
 
 // ServeDNS routes requests to the authoritative kubernetes. It implements the plugin.Handler interface.
 func (k8i Kubernetai) ServeDNS(ctx context.Context, w dns.ResponseWriter, r *dns.Msg) (rcode int, err error) {
-	state := request.Request{W: w, Req: r}
-	for i, k := range k8i.Kubernetes {
-		zone := plugin.Zones(k.Zones).Matches(state.Name())
-		if zone == "" {
-			continue
-		}
-
-		// If fallthrough is enabled and there are more kubernetes in the list, then we
-		// should continue to the next kubernetes in the list (not next plugin) when
-		// ServeDNS results in NXDOMAIN.
-		if i != (len(k8i.Kubernetes)-1) && k8i.Fall[i].Through(state.Name()) {
-			// Use a non-writer so we don't write NXDOMAIN to client
-			nw := nonwriter.New(w)
-
-			_, err := k.ServeDNS(ctx, nw, r)
-
-			// Return SERVFAIL if error
-			if err != nil {
-				return dns.RcodeServerFailure, err
-			}
-
-			// If NXDOMAIN, continue to next kubernetes instead of next plugin
-			if nw.Msg.Rcode == dns.RcodeNameError {
-				continue
-			}
-
-			// Otherwise write message to client
-			m := nw.Msg
-			state.SizeAndDo(m)
-			m = state.Scrub(m)
-			w.WriteMsg(m)
-
-			return m.Rcode, err
-
-		} else {
-			rcode, err = k.ServeDNS(ctx, w, r)
-		}
-
-		return rcode, err
-	}
-	return plugin.NextOrFailure(k8i.Name(), k8i.Next, ctx, w, r)
+	return k8i.Kubernetes[0].ServeDNS(ctx, w, r)
 }
 
 // AutoPath routes AutoPath requests to the authoritative kubernetes.
