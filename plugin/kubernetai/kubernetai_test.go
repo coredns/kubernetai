@@ -166,7 +166,6 @@ func TestKubernetai_AutoPath(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			k8i := Kubernetai{
 				Zones:          tt.fields.Zones,
-				Next:           tt.fields.Next,
 				Kubernetes:     tt.fields.Kubernetes,
 				autoPathSearch: tt.fields.autoPathSearch,
 				p:              tt.fields.p,
