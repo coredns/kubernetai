@@ -25,12 +25,16 @@ func setup(c *caddy.Controller) error {
 
 	prev := &kubernetes.Kubernetes{}
 	for _, k := range k8i.Kubernetes {
-		err = k.InitKubeCache(context.Background())
+		onStart, onShut, err := k.InitKubeCache(context.Background())
 		if err != nil {
 			return plugin.Error(Name(), err)
 		}
-		k.RegisterKubeCache(c)
-
+		if onShut != nil {
+			c.OnShutdown(onShut)
+		}
+		if onStart != nil {
+			c.OnStartup(onStart)
+		}
 		// set Next of the previous kubernetes instance to the current instance
 		prev.Next = k
 		prev = k
