@@ -29,9 +29,12 @@ func setup(c *caddy.Controller) error {
 		if err != nil {
 			return plugin.Error(Name(), err)
 		}
-		c.OnShutdown(onShut)
-		c.OnStartup(onStart)
-
+		if onShut != nil {
+			c.OnShutdown(onShut)
+		}
+		if onStart != nil {
+			c.OnStartup(onStart)
+		}
 		// set Next of the previous kubernetes instance to the current instance
 		prev.Next = k
 		prev = k
