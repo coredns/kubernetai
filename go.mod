@@ -1,6 +1,6 @@
 module github.com/coredns/kubernetai
 
-go 1.15
+go 1.17
 
 require (
 	github.com/coredns/caddy v1.1.1
