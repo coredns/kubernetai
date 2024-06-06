@@ -13,17 +13,17 @@ initWorkingDir: &initWorkingDir
     GOROOT=$(go env GOROOT)
     sudo rm -r $(go env GOROOT)
     sudo mkdir $GOROOT
-    LATEST=$(curl -s https://go.dev/VERSION?m=text)
+    LATEST=$(curl -s https://go.dev/VERSION?m=text| head -1)
     curl https://dl.google.com/go/${LATEST}.linux-amd64.tar.gz | sudo tar xz -C $GOROOT --strip-components=1
 
 integrationDefaults: &integrationDefaults
   machine:
-    image: ubuntu-1604:201903-01
+    image: ubuntu-2204:2024.04.4
   working_directory: ~/go/src/${CIRCLE_PROJECT_USERNAME}/kubernetai
   environment:
-    - K8S_VERSION: v1.20.2
+    - K8S_VERSION: v1.25.16
     - KUBECONFIG: /home/circleci/.kube/kind-config-kind
-    - KIND_VERSION: v0.10.0
+    - KIND_VERSION: v0.23.0
 
 setupKubernetes: &setupKubernetes
   - run:
@@ -40,7 +40,7 @@ buildKubernetaiImage: &buildKubernetaiImage
         mv ./coredns ../coredns/
         cd ../coredns/
 
-        docker build -t coredns . && \
+        docker buildx build -t coredns . && \
         kind load docker-image coredns
 jobs:
   kubernetai-tests:
@@ -64,7 +64,7 @@ jobs:
           name: Run kubernetai plugin tests
           command: |
             cd ~/go/src/${CIRCLE_PROJECT_USERNAME}/ci/test/kubernetai
-            go mod download
+            go mod tidy
             GO111MODULE=on go test -v ./...
 
 workflows:
