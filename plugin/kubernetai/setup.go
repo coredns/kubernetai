@@ -25,7 +25,7 @@ func setup(c *caddy.Controller) error {
 
 	prev := &kubernetes.Kubernetes{}
 	for _, k := range k8i.Kubernetes {
-		onStart, onShut, err := k.InitKubeCache(context.Background())
+		onStart, onShut, err := k.(*embeddedKubernetes).InitKubeCache(context.Background())
 		if err != nil {
 			return plugin.Error(Name(), err)
 		}
@@ -36,13 +36,13 @@ func setup(c *caddy.Controller) error {
 			c.OnStartup(onStart)
 		}
 		// set Next of the previous kubernetes instance to the current instance
-		prev.Next = k
-		prev = k
+		prev.Next = k.(*embeddedKubernetes).Kubernetes
+		prev = k.(*embeddedKubernetes).Kubernetes
 	}
 
 	dnsserver.GetConfig(c).AddPlugin(func(next plugin.Handler) plugin.Handler {
 		// set Next of the last kubernetes instance to the next plugin
-		k8i.Kubernetes[len(k8i.Kubernetes)-1].Next = next
+		k8i.Kubernetes[len(k8i.Kubernetes)-1].(*embeddedKubernetes).Next = next
 		return k8i
 	})
 
@@ -53,7 +53,6 @@ func setup(c *caddy.Controller) error {
 func Parse(c *caddy.Controller) (*Kubernetai, error) {
 	var k8i = &Kubernetai{
 		autoPathSearch: searchFromResolvConf(),
-		p:              &podHandler{},
 	}
 
 	for c.Next() {
@@ -61,7 +60,7 @@ func Parse(c *caddy.Controller) (*Kubernetai, error) {
 		if err != nil {
 			return nil, err
 		}
-		k8i.Kubernetes = append(k8i.Kubernetes, k8s)
+		k8i.Kubernetes = append(k8i.Kubernetes, newEmbeddedKubernetes(k8s))
 	}
 
 	if len(k8i.Kubernetes) == 0 {

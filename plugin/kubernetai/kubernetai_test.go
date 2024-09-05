@@ -1,22 +1,33 @@
 package kubernetai
 
 import (
+	"context"
 	"net"
 	"reflect"
+	"strings"
 	"testing"
 
 	"github.com/coredns/coredns/plugin"
-	"github.com/coredns/coredns/plugin/kubernetes"
 	"github.com/coredns/coredns/plugin/kubernetes/object"
 	"github.com/coredns/coredns/request"
 	"github.com/miekg/dns"
 )
 
-type k8iPodHandlerTester struct{}
+var (
+	podip string
+)
 
-var podip string
+// mockK8sPlugin satisfies the embeddedKubernetesPluginInterface interface and provides a mock kubernetes plugin that can be used to test kubernetai behaviour.
+type mockK8sPlugin struct {
+	zones       []string
+	transfer    string
+	transferErr error
+}
 
-func (k8i *k8iPodHandlerTester) PodWithIP(k kubernetes.Kubernetes, ip string) *object.Pod {
+var _ embeddedKubernetesPluginInterface = &mockK8sPlugin{}
+
+// PodWithIP always returns a pod with the given ip address in the namespace 'test-1'.
+func (mkp *mockK8sPlugin) PodWithIP(ip string) *object.Pod {
 	if ip == "" {
 		return nil
 	}
@@ -27,7 +38,39 @@ func (k8i *k8iPodHandlerTester) PodWithIP(k kubernetes.Kubernetes, ip string) *o
 	return pod
 }
 
-var k8iPodHandlerTest k8iPodHandlerTester
+// Name satisfies the plugin.Handler interface but is not used for tests.
+func (mkp *mockK8sPlugin) Name() string {
+	return ""
+}
+
+// ServeDNS satisfies the plugin.Handler interface but is not used for tests.
+func (mkp *mockK8sPlugin) ServeDNS(_ context.Context, _ dns.ResponseWriter, _ *dns.Msg) (rcode int, err error) {
+	return 0, nil
+}
+
+// Transfer satisfies the transfer.Transferer interface by playing back canned transfer responses.
+// The canned transfer response is stored in a textual representation.
+func (mkp *mockK8sPlugin) Transfer(_ string, _ uint32) (<-chan []dns.RR, error) {
+	if mkp.transferErr != nil {
+		return nil, mkp.transferErr
+	}
+
+	ch := make(chan []dns.RR)
+	go func() {
+		zp := dns.NewZoneParser(strings.NewReader(mkp.transfer), "", "")
+		for rr, ok := zp.Next(); ok; rr, ok = zp.Next() {
+			ch <- []dns.RR{rr}
+		}
+		close(ch)
+	}()
+
+	return ch, nil
+}
+
+// Zones satisfies the embeddedKubernetesPluginInterface interface by returning pre-configured zones.
+func (mkp *mockK8sPlugin) Zones() plugin.Zones {
+	return plugin.Zones(mkp.zones)
+}
 
 type responseWriterTest struct {
 	dns.ResponseWriter
@@ -44,10 +87,8 @@ func (res *responseWriterTest) RemoteAddr() net.Addr {
 func TestKubernetai_AutoPath(t *testing.T) {
 	type fields struct {
 		Zones          []string
-		Next           plugin.Handler
-		Kubernetes     []*kubernetes.Kubernetes
+		Kubernetes     []embeddedKubernetesPluginInterface
 		autoPathSearch []string
-		p              *k8iPodHandlerTester
 	}
 	type args struct {
 		state request.Request
@@ -55,22 +96,21 @@ func TestKubernetai_AutoPath(t *testing.T) {
 
 	w := &responseWriterTest{}
 
-	k8sClusterLocal := &kubernetes.Kubernetes{
-		Zones: []string{
+	k8sClusterLocal := &mockK8sPlugin{
+		zones: []string{
 			"cluster.local.",
 		},
 	}
-	k8sFlusterLocal := &kubernetes.Kubernetes{
-		Zones: []string{
+	k8sFlusterLocal := &mockK8sPlugin{
+		zones: []string{
 			"fluster.local.",
 		},
 	}
 	defaultK8iConfig := fields{
-		Kubernetes: []*kubernetes.Kubernetes{
+		Kubernetes: []embeddedKubernetesPluginInterface{
 			k8sFlusterLocal,
 			k8sClusterLocal,
 		},
-		p: &k8iPodHandlerTest,
 	}
 
 	tests := []struct {
@@ -168,7 +208,6 @@ func TestKubernetai_AutoPath(t *testing.T) {
 				Zones:          tt.fields.Zones,
 				Kubernetes:     tt.fields.Kubernetes,
 				autoPathSearch: tt.fields.autoPathSearch,
-				p:              tt.fields.p,
 			}
 			podip = tt.ip
 			if got := k8i.AutoPath(tt.args.state); !reflect.DeepEqual(got, tt.want) {
