@@ -123,14 +123,14 @@ func TestSetup(t *testing.T) {
 		}
 
 		prev := &kubernetes.Kubernetes{
-			Next: k8i.Kubernetes[0],
+			Next: k8i.Kubernetes[0].(*embeddedKubernetes).Kubernetes,
 		}
 		for j, k := range k8i.Kubernetes {
-			if prev.Next != k {
-				t.Fatalf("Test %d: Expected kubernetes instance %d to be referencing kubernetes instance %d as next, got %v", i, j-1, j, prev.Next)
+			if prev.Next != k.(*embeddedKubernetes).Kubernetes {
+				t.Fatalf("Test %d: Expected kubernetes instance %d to be referencing kubernetes instance %d as next, got %+v", i, j-1, j, prev.Next)
 			}
 
-			prev = k
+			prev = k.(*embeddedKubernetes).Kubernetes
 		}
 
 		if prev.Next != nextHandler {
